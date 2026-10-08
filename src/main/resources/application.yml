@@ -1,0 +1,34 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: incident-service
+
+  datasource:
+    url: ${DB_URL:jdbc:h2:mem:incidentdb;DB_CLOSE_DELAY=-1}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+incident:
+  jwt:
+    # Debe coincidir con identity.jwt.secret de identity-service hasta que el
+    # API Gateway (TS-04) centralice la validacion de tokens (CA-04).
+    secret: ${JWT_SECRET:dev-only-secret-change-me-dev-only-secret-change-me}
+  edit-window-minutes: ${EDIT_WINDOW_MINUTES:30}
+  max-evidence-size-bytes: ${MAX_EVIDENCE_SIZE_BYTES:26214400}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
