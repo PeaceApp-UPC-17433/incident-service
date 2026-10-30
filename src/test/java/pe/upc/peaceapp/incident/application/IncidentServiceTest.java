@@ -80,4 +80,77 @@ class IncidentServiceTest {
         field.setAccessible(true);
         field.set(incident, createdAt);
     }
+
+    @Test
+    void rejectsOversizeEvidenceWithoutPersistingIncident() {
+        var request = new CreateIncidentRequest(IncidentType.ROBO, "desc", -12.05, -77.03, false,
+                java.util.List.of(new pe.upc.peaceapp.incident.api.dto.EvidenceRequest(
+                        pe.upc.peaceapp.incident.domain.model.Evidence.EvidenceType.FOTO,
+                        "https://example.test/evidence.jpg", MAX_EVIDENCE_SIZE_BYTES + 1)));
+        assertThatThrownBy(() -> newIncidentService().create(UUID.randomUUID(), request))
+                .isInstanceOf(pe.upc.peaceapp.incident.api.error.EvidenceTooLargeException.class);
+        org.mockito.Mockito.verifyNoInteractions(incidentRepository, auditLogRepository);
+    }
+
+    @Test
+    void acceptsEvidenceAtTheSizeLimit() {
+        when(incidentRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        var request = new CreateIncidentRequest(IncidentType.ROBO, "desc", -12.05, -77.03, false,
+                java.util.List.of(new pe.upc.peaceapp.incident.api.dto.EvidenceRequest(
+                        pe.upc.peaceapp.incident.domain.model.Evidence.EvidenceType.FOTO,
+                        "https://example.test/evidence.jpg", MAX_EVIDENCE_SIZE_BYTES)));
+        assertThat(newIncidentService().create(UUID.randomUUID(), request).getEvidences()).hasSize(1);
+        org.mockito.Mockito.verify(auditLogRepository).save(any());
+    }
+
+    @Test
+    void updatesOwnedIncidentAndAuditsTheChange() {
+        UUID author = UUID.randomUUID();
+        Incident incident = new Incident(author, false, IncidentType.ROBO, "antes", -12.05, -77.03);
+        when(incidentRepository.findById(any())).thenReturn(Optional.of(incident));
+        when(incidentRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        Incident result = newIncidentService().update(UUID.randomUUID(), author,
+                new UpdateIncidentRequest(IncidentType.HURTO, "despues"));
+        assertThat(result.getType()).isEqualTo(IncidentType.HURTO);
+        assertThat(result.getDescription()).isEqualTo("despues");
+        assertThat(result.getUpdatedAt()).isNotNull();
+        org.mockito.Mockito.verify(auditLogRepository).save(any());
+    }
+
+    @Test
+    void partialUpdatePreservesUnspecifiedFields() {
+        UUID author = UUID.randomUUID();
+        Incident incident = new Incident(author, false, IncidentType.ROBO, "original", -12.05, -77.03);
+        when(incidentRepository.findById(any())).thenReturn(Optional.of(incident));
+        when(incidentRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        Incident result = newIncidentService().update(UUID.randomUUID(), author, new UpdateIncidentRequest(null, null));
+        assertThat(result.getType()).isEqualTo(IncidentType.ROBO);
+        assertThat(result.getDescription()).isEqualTo("original");
+    }
+
+    @Test
+    void deletesOwnedIncidentAndCreatesAuditRecord() {
+        UUID author = UUID.randomUUID();
+        Incident incident = new Incident(author, false, IncidentType.ROBO, "desc", -12.05, -77.03);
+        when(incidentRepository.findById(any())).thenReturn(Optional.of(incident));
+        newIncidentService().delete(UUID.randomUUID(), author);
+        org.mockito.Mockito.verify(incidentRepository).delete(incident);
+        org.mockito.Mockito.verify(auditLogRepository).save(any());
+    }
+
+    @Test
+    void missingIncidentFailsBeforeMutation() {
+        when(incidentRepository.findById(any())).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> newIncidentService().getById(UUID.randomUUID()))
+                .isInstanceOf(pe.upc.peaceapp.incident.api.error.IncidentNotFoundException.class);
+    }
+
+    @Test
+    void historyIsScopedToTheAuthor() {
+        UUID author = UUID.randomUUID();
+        Incident incident = new Incident(author, false, IncidentType.ROBO, "desc", -12.05, -77.03);
+        when(incidentRepository.findByAuthorIdOrderByCreatedAtDesc(author)).thenReturn(java.util.List.of(incident));
+        assertThat(newIncidentService().getOwnHistory(author)).containsExactly(incident);
+    }
 }
+
