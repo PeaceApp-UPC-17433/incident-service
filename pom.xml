@@ -13,7 +13,7 @@
 
   <groupId>pe.upc.peaceapp</groupId>
   <artifactId>incident-service</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.3.0-SNAPSHOT</version>
   <name>incident-service</name>
   <description>PeaceApp - BC-02 Incident Reporting (ciclo de vida del reporte de incidentes)</description>
 
