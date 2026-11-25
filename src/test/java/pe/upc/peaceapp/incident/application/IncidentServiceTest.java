@@ -29,19 +29,21 @@ class IncidentServiceTest {
     private static final long MAX_EVIDENCE_SIZE_BYTES = 25L * 1024 * 1024;
 
     @Mock
+    private pe.upc.peaceapp.incident.messaging.IntegrationEventPublisher events;
+    @Mock
     private IncidentRepository incidentRepository;
     @Mock
     private IncidentAuditLogRepository auditLogRepository;
 
     private IncidentService newIncidentService() {
-        return new IncidentService(incidentRepository, auditLogRepository, EDIT_WINDOW_MINUTES, MAX_EVIDENCE_SIZE_BYTES);
+        return new IncidentService(incidentRepository, auditLogRepository, events, EDIT_WINDOW_MINUTES, MAX_EVIDENCE_SIZE_BYTES);
     }
 
     @Test
     void createPersistsIncidentWithAuthor() {
         IncidentService service = newIncidentService();
         UUID authorId = UUID.randomUUID();
-        var request = new CreateIncidentRequest(IncidentType.ROBO, "Robo al paso", -12.05, -77.03, false, null);
+        var request = new CreateIncidentRequest(IncidentType.ROBO, null, "Robo al paso", null, null, -12.05, -77.03, false, null);
         when(incidentRepository.save(any(Incident.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Incident created = service.create(authorId, request);
@@ -59,7 +61,7 @@ class IncidentServiceTest {
         when(incidentRepository.findById(any())).thenReturn(Optional.of(incident));
 
         assertThatThrownBy(() -> service.update(UUID.randomUUID(), otherUserId,
-                new UpdateIncidentRequest(IncidentType.HURTO, "editado")))
+                new UpdateIncidentRequest(IncidentType.HURTO, null, "editado", null)))
                 .isInstanceOf(ForbiddenOperationException.class);
     }
 
@@ -83,7 +85,7 @@ class IncidentServiceTest {
 
     @Test
     void rejectsOversizeEvidenceWithoutPersistingIncident() {
-        var request = new CreateIncidentRequest(IncidentType.ROBO, "desc", -12.05, -77.03, false,
+        var request = new CreateIncidentRequest(IncidentType.ROBO, null, "desc", null, null, -12.05, -77.03, false,
                 java.util.List.of(new pe.upc.peaceapp.incident.api.dto.EvidenceRequest(
                         pe.upc.peaceapp.incident.domain.model.Evidence.EvidenceType.FOTO,
                         "https://example.test/evidence.jpg", MAX_EVIDENCE_SIZE_BYTES + 1)));
@@ -95,7 +97,7 @@ class IncidentServiceTest {
     @Test
     void acceptsEvidenceAtTheSizeLimit() {
         when(incidentRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-        var request = new CreateIncidentRequest(IncidentType.ROBO, "desc", -12.05, -77.03, false,
+        var request = new CreateIncidentRequest(IncidentType.ROBO, null, "desc", null, null, -12.05, -77.03, false,
                 java.util.List.of(new pe.upc.peaceapp.incident.api.dto.EvidenceRequest(
                         pe.upc.peaceapp.incident.domain.model.Evidence.EvidenceType.FOTO,
                         "https://example.test/evidence.jpg", MAX_EVIDENCE_SIZE_BYTES)));
@@ -110,7 +112,7 @@ class IncidentServiceTest {
         when(incidentRepository.findById(any())).thenReturn(Optional.of(incident));
         when(incidentRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         Incident result = newIncidentService().update(UUID.randomUUID(), author,
-                new UpdateIncidentRequest(IncidentType.HURTO, "despues"));
+                new UpdateIncidentRequest(IncidentType.HURTO, null, "despues", null));
         assertThat(result.getType()).isEqualTo(IncidentType.HURTO);
         assertThat(result.getDescription()).isEqualTo("despues");
         assertThat(result.getUpdatedAt()).isNotNull();
@@ -123,7 +125,7 @@ class IncidentServiceTest {
         Incident incident = new Incident(author, false, IncidentType.ROBO, "original", -12.05, -77.03);
         when(incidentRepository.findById(any())).thenReturn(Optional.of(incident));
         when(incidentRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-        Incident result = newIncidentService().update(UUID.randomUUID(), author, new UpdateIncidentRequest(null, null));
+        Incident result = newIncidentService().update(UUID.randomUUID(), author, new UpdateIncidentRequest(null, null, null, null));
         assertThat(result.getType()).isEqualTo(IncidentType.ROBO);
         assertThat(result.getDescription()).isEqualTo("original");
     }

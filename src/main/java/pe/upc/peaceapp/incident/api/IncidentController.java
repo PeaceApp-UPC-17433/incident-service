@@ -8,7 +8,14 @@ import org.springframework.web.bind.annotation.*;
 import pe.upc.peaceapp.incident.api.dto.CreateIncidentRequest;
 import pe.upc.peaceapp.incident.api.dto.IncidentResponse;
 import pe.upc.peaceapp.incident.api.dto.UpdateIncidentRequest;
+import pe.upc.peaceapp.incident.api.dto.IncidentSummaryResponse;
+import pe.upc.peaceapp.incident.api.dto.QueryResponses.*;
+import pe.upc.peaceapp.incident.application.IncidentQueryService;
 import pe.upc.peaceapp.incident.application.IncidentService;
+import pe.upc.peaceapp.incident.domain.model.IncidentStatus;
+import pe.upc.peaceapp.incident.domain.model.IncidentType;
+import pe.upc.peaceapp.incident.domain.model.Severity;
+import pe.upc.peaceapp.incident.domain.repository.IncidentFilter;
 
 import java.util.UUID;
 
@@ -17,9 +24,11 @@ import java.util.UUID;
 public class IncidentController {
 
     private final IncidentService incidentService;
+    private final IncidentQueryService queryService;
 
-    public IncidentController(IncidentService incidentService) {
+    public IncidentController(IncidentService incidentService, IncidentQueryService queryService) {
         this.incidentService = incidentService;
+        this.queryService = queryService;
     }
 
     /** US-04, US-06, US-07, US-08: registro rapido de un incidente. */
@@ -28,6 +37,47 @@ public class IncidentController {
     public IncidentResponse create(Authentication authentication, @Valid @RequestBody CreateIncidentRequest request) {
         var incident = incidentService.create(currentUserId(authentication), request);
         return IncidentResponse.from(incident);
+    }
+
+    @GetMapping
+    public PageResponse<IncidentSummaryResponse> list(Authentication authentication,
+            @RequestParam(required = false) IncidentType type, @RequestParam(required = false) Severity severity,
+            @RequestParam(required = false) IncidentStatus status, @RequestParam(required = false) String q,
+            @RequestParam(required = false) java.time.Instant from, @RequestParam(required = false) java.time.Instant to,
+            @RequestParam(required = false) Boolean mine, @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String direction, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        var author = Boolean.TRUE.equals(mine) ? currentUserId(authentication) : null;
+        var filter = new IncidentFilter(type, severity, status, q, from, to, author, null, false);
+        return PageResponse.of(queryService.search(filter, sortBy, direction, page, size), IncidentSummaryResponse::from);
+    }
+
+    @GetMapping("/stats")
+    public IncidentQueryService.Stats stats() {
+        return queryService.stats();
+    }
+
+    @GetMapping("/map")
+    public java.util.List<MapPointResponse> map(@RequestParam double minLat, @RequestParam double maxLat,
+            @RequestParam double minLng, @RequestParam double maxLng, @RequestParam(required = false) IncidentType type,
+            @RequestParam(required = false) Severity severity, @RequestParam(defaultValue = "500") int limit) {
+        var filter = new IncidentFilter(type, severity, null, null, null, null, null,
+                new IncidentFilter.Bounds(minLat, maxLat, minLng, maxLng), true);
+        return queryService.mapPoints(filter, limit).stream()
+                .map(i -> new MapPointResponse(i.getId(), i.getType(), i.getType().severity(), i.getLatitude(), i.getLongitude()))
+                .toList();
+    }
+
+    @GetMapping("/heatmap")
+    public java.util.List<HeatCellResponse> heatmap(@RequestParam double minLat, @RequestParam double maxLat,
+            @RequestParam double minLng, @RequestParam double maxLng, @RequestParam(defaultValue = "0.01") double cellSize) {
+        return queryService.heatmap(new IncidentFilter.Bounds(minLat, maxLat, minLng, maxLng), cellSize);
+    }
+
+    @PutMapping("/{id}/status")
+    public IncidentResponse changeStatus(Authentication authentication, @PathVariable UUID id,
+                                         @Valid @RequestBody ChangeStatusRequest request) {
+        return IncidentResponse.from(incidentService.changeStatus(id, currentUserId(authentication), request.status()));
     }
 
     /** US-21: detalle del incidente. */

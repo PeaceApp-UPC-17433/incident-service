@@ -33,8 +33,17 @@ public class Incident {
     @Column(nullable = false)
     private IncidentType type;
 
+    @Column(length = 50)
+    private String title;
+
     @Column(length = 1000)
     private String description;
+
+    @Column(length = 100)
+    private String address;
+
+    @Column(nullable = false)
+    private Instant occurredAt = Instant.now();
 
     @Column(nullable = false)
     private double latitude;
