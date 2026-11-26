@@ -157,6 +157,6 @@ class IncidentServiceTest {
 
     private static pe.upc.peaceapp.incident.evidence.EvidenceStorage disabledStorage() {
         return new pe.upc.peaceapp.incident.evidence.EvidenceStorage(
-                new pe.upc.peaceapp.incident.evidence.EvidenceStorageProperties(null, null, null, null, null, null));
+                new pe.upc.peaceapp.incident.evidence.EvidenceStorageProperties(null, null, null, null, null, null, null));
     }
 }

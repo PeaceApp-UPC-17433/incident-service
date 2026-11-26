@@ -60,12 +60,14 @@ public class EvidenceStorage {
     }
 
     private BlobServiceSasSignatureValues signature(OffsetDateTime expiresAt, BlobSasPermission permission) {
-        return new BlobServiceSasSignatureValues(expiresAt, permission).setProtocol(SasProtocol.HTTPS_ONLY);
+        // En Azure el SAS solo sirve por HTTPS. HTTP solo se admite si el endpoint configurado lo es (Azurite).
+        SasProtocol protocol = properties.endpoint().startsWith("https://") ? SasProtocol.HTTPS_ONLY : SasProtocol.HTTPS_HTTP;
+        return new BlobServiceSasSignatureValues(expiresAt, permission).setProtocol(protocol);
     }
 
     private BlobClient client(String container, String name) {
         return new BlobClientBuilder()
-                .endpoint("https://" + properties.account() + ".blob.core.windows.net")
+                .endpoint(properties.endpoint())
                 .credential(credential)
                 .containerName(container)
                 .blobName(name)
@@ -73,6 +75,6 @@ public class EvidenceStorage {
     }
 
     private String blobUrl(String container, String name) {
-        return "https://" + properties.account() + ".blob.core.windows.net/" + container + "/" + name;
+        return properties.endpoint() + "/" + container + "/" + name;
     }
 }

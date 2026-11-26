@@ -14,12 +14,12 @@ class EvidenceStorageTest {
     static final String KEY = Base64.getEncoder().encodeToString("unit-test-storage-key-0123456789".getBytes());
 
     private EvidenceStorage storage() {
-        return new EvidenceStorage(new EvidenceStorageProperties("stmedia", KEY, null, null, Duration.ofMinutes(5), null));
+        return new EvidenceStorage(new EvidenceStorageProperties("stmedia", KEY, null, null, Duration.ofMinutes(5), null, null));
     }
 
     @Test
     void isDisabledWithoutCredentials() {
-        var disabled = new EvidenceStorage(new EvidenceStorageProperties(null, null, null, null, null, null));
+        var disabled = new EvidenceStorage(new EvidenceStorageProperties(null, null, null, null, null, null, null));
         assertFalse(disabled.enabled());
         assertEquals("https://x/y.jpg", disabled.signedReadUrl("https://x/y.jpg"));
     }
