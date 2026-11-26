@@ -49,6 +49,7 @@ incident:
     storage:
       account: ${EVIDENCE_STORAGE_ACCOUNT:}
       key: ${EVIDENCE_STORAGE_KEY:}
+      endpoint: ${EVIDENCE_STORAGE_ENDPOINT:}
 
 management:
   metrics:

@@ -11,13 +11,18 @@ public record EvidenceStorageProperties(
         String rawContainer,
         String sanitizedContainer,
         Duration uploadTtl,
-        Duration readTtl) {
+        Duration readTtl,
+        String endpoint) {
 
     public EvidenceStorageProperties {
         rawContainer = rawContainer == null ? "evidences-raw" : rawContainer;
         sanitizedContainer = sanitizedContainer == null ? "evidences-sanitized" : sanitizedContainer;
         uploadTtl = uploadTtl == null ? Duration.ofMinutes(10) : uploadTtl;
         readTtl = readTtl == null ? Duration.ofHours(1) : readTtl;
+        // Endpoint del Blob service. Por defecto el de Azure; se puede apuntar a Azurite en pruebas.
+        endpoint = endpoint == null || endpoint.isBlank()
+                ? "https://" + account + ".blob.core.windows.net"
+                : endpoint.replaceAll("/+$", "");
     }
 
     public boolean configured() {
