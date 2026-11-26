@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-30",
+  "service": "incident-service",
+  "command": "mvn -B -ntp clean verify (Java 21)",
+  "tests": 11,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "source_sha256": "e1b910bf04786c3f98a90f524400232eddcacf6e7bfacfc3e929d70a223cb556",
+  "coverage_all_classes": {
+    "instruction": {
+      "covered": 522,
+      "missed": 254,
+      "percent": 67.27
+    },
+    "branch": {
+      "covered": 14,
+      "missed": 6,
+      "percent": 70.0
+    },
+    "line": {
+      "covered": 116,
+      "missed": 55,
+      "percent": 67.84
+    }
+  },
+  "coverage_application_package": {
+    "instruction": {
+      "covered": 205,
+      "missed": 0,
+      "percent": 100.0
+    },
+    "branch": {
+      "covered": 14,
+      "missed": 0,
+      "percent": 100.0
+    },
+    "line": {
+      "covered": 42,
+      "missed": 0,
+      "percent": 100.0
+    }
+  },
+  "gate": "70% LINE coverage of the application package only; full report includes every class",
+  "suites": [
+    {
+      "name": "pe.upc.peaceapp.incident.application.IncidentServiceTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "rejectsOversizeEvidenceWithoutPersistingIncident",
+        "acceptsEvidenceAtTheSizeLimit",
+        "deleteFailsWhenEditWindowExpired",
+        "updatesOwnedIncidentAndAuditsTheChange",
+        "deletesOwnedIncidentAndCreatesAuditRecord",
+        "createPersistsIncidentWithAuthor",
+        "missingIncidentFailsBeforeMutation",
+        "partialUpdatePreservesUnspecifiedFields",
+        "updateFailsWhenRequesterIsNotTheAuthor",
+        "historyIsScopedToTheAuthor"
+      ]
+    },
+    {
+      "name": "pe.upc.peaceapp.incident.IncidentServiceApplicationTests",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "contextLoads"
+      ]
+    }
+  ]
+}

@@ -1,7 +1,11 @@
 package pe.upc.peaceapp.incident.api.dto;
 
+import jakarta.validation.constraints.Size;
 import pe.upc.peaceapp.incident.domain.model.IncidentType;
 
-/** US-09: edicion dentro de la ventana de tiempo. */
-public record UpdateIncidentRequest(IncidentType type, String description) {
+public record UpdateIncidentRequest(
+        IncidentType type,
+        @Size(max = 50) String title,
+        @Size(max = 1000) String description,
+        @Size(max = 100) String address) {
 }
