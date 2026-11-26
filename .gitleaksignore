@@ -1,0 +1,3 @@
+# Hallazgos historicos revisados (fingerprint). Ver el motivo en cada linea.
+# src/test/java/pe/upc/peaceapp/incident/evidence/EvidenceApiTest.java -> clave falsa de pruebas
+ce5df05bb6ce41d6156f822b60954a34621b4218:src/test/java/pe/upc/peaceapp/incident/evidence/EvidenceApiTest.java:generic-api-key:21
