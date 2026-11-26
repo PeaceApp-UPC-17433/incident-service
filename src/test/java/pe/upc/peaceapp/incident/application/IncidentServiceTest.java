@@ -36,7 +36,7 @@ class IncidentServiceTest {
     private IncidentAuditLogRepository auditLogRepository;
 
     private IncidentService newIncidentService() {
-        return new IncidentService(incidentRepository, auditLogRepository, events, EDIT_WINDOW_MINUTES, MAX_EVIDENCE_SIZE_BYTES);
+        return new IncidentService(incidentRepository, auditLogRepository, events, EDIT_WINDOW_MINUTES, MAX_EVIDENCE_SIZE_BYTES, disabledStorage());
     }
 
     @Test
@@ -154,5 +154,9 @@ class IncidentServiceTest {
         when(incidentRepository.findByAuthorIdOrderByCreatedAtDesc(author)).thenReturn(java.util.List.of(incident));
         assertThat(newIncidentService().getOwnHistory(author)).containsExactly(incident);
     }
-}
 
+    private static pe.upc.peaceapp.incident.evidence.EvidenceStorage disabledStorage() {
+        return new pe.upc.peaceapp.incident.evidence.EvidenceStorage(
+                new pe.upc.peaceapp.incident.evidence.EvidenceStorageProperties(null, null, null, null, null, null));
+    }
+}

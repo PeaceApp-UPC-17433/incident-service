@@ -16,6 +16,7 @@ import pe.upc.peaceapp.incident.domain.model.IncidentStatus;
 import pe.upc.peaceapp.incident.domain.model.IncidentType;
 import pe.upc.peaceapp.incident.domain.model.Severity;
 import pe.upc.peaceapp.incident.domain.repository.IncidentFilter;
+import pe.upc.peaceapp.incident.evidence.EvidenceStorage;
 
 import java.util.UUID;
 
@@ -25,10 +26,17 @@ public class IncidentController {
 
     private final IncidentService incidentService;
     private final IncidentQueryService queryService;
+    private final EvidenceStorage evidenceStorage;
 
-    public IncidentController(IncidentService incidentService, IncidentQueryService queryService) {
+    public IncidentController(IncidentService incidentService, IncidentQueryService queryService,
+                              EvidenceStorage evidenceStorage) {
         this.incidentService = incidentService;
         this.queryService = queryService;
+        this.evidenceStorage = evidenceStorage;
+    }
+
+    private IncidentResponse present(pe.upc.peaceapp.incident.domain.model.Incident incident) {
+        return IncidentResponse.from(incident).withEvidenceUrls(evidenceStorage::signedReadUrl);
     }
 
     /** US-04, US-06, US-07, US-08: registro rapido de un incidente. */
@@ -36,7 +44,7 @@ public class IncidentController {
     @ResponseStatus(HttpStatus.CREATED)
     public IncidentResponse create(Authentication authentication, @Valid @RequestBody CreateIncidentRequest request) {
         var incident = incidentService.create(currentUserId(authentication), request);
-        return IncidentResponse.from(incident);
+        return present(incident);
     }
 
     @GetMapping
@@ -77,20 +85,20 @@ public class IncidentController {
     @PutMapping("/{id}/status")
     public IncidentResponse changeStatus(Authentication authentication, @PathVariable UUID id,
                                          @Valid @RequestBody ChangeStatusRequest request) {
-        return IncidentResponse.from(incidentService.changeStatus(id, currentUserId(authentication), request.status()));
+        return present(incidentService.changeStatus(id, currentUserId(authentication), request.status()));
     }
 
     /** US-21: detalle del incidente. */
     @GetMapping("/{id}")
     public IncidentResponse getById(@PathVariable UUID id) {
-        return IncidentResponse.from(incidentService.getById(id));
+        return present(incidentService.getById(id));
     }
 
     /** US-10: historial de reportes propios. */
     @GetMapping("/mine")
     public java.util.List<IncidentResponse> getOwnHistory(Authentication authentication) {
         return incidentService.getOwnHistory(currentUserId(authentication)).stream()
-                .map(IncidentResponse::from)
+                .map(this::present)
                 .toList();
     }
 
@@ -99,7 +107,7 @@ public class IncidentController {
     public IncidentResponse update(Authentication authentication, @PathVariable UUID id,
                                     @RequestBody UpdateIncidentRequest request) {
         var incident = incidentService.update(id, currentUserId(authentication), request);
-        return IncidentResponse.from(incident);
+        return present(incident);
     }
 
     /** US-09: eliminacion dentro de la ventana de tiempo. */

@@ -42,4 +42,10 @@ public record IncidentResponse(
                 incident.getUpdatedAt(),
                 incident.getEvidences().stream().map(EvidenceResponse::from).toList());
     }
+
+    public IncidentResponse withEvidenceUrls(java.util.function.UnaryOperator<String> urls) {
+        return new IncidentResponse(id, authorId, type, severity, title, description, address, latitude, longitude,
+                status, occurredAt, createdAt, updatedAt,
+                evidences.stream().map(e -> new EvidenceResponse(e.id(), e.mediaType(), urls.apply(e.url()), e.sizeBytes())).toList());
+    }
 }

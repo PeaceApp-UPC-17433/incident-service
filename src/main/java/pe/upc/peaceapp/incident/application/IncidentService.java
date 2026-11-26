@@ -14,6 +14,7 @@ import pe.upc.peaceapp.incident.api.error.ForbiddenOperationException;
 import pe.upc.peaceapp.incident.api.error.IncidentNotFoundException;
 import pe.upc.peaceapp.incident.api.error.InvalidStatusTransitionException;
 import pe.upc.peaceapp.incident.domain.model.Evidence;
+import pe.upc.peaceapp.incident.evidence.EvidenceStorage;
 import pe.upc.peaceapp.incident.domain.model.Incident;
 import pe.upc.peaceapp.incident.domain.model.IncidentAuditLog;
 import pe.upc.peaceapp.incident.domain.repository.IncidentAuditLogRepository;
@@ -34,17 +35,20 @@ public class IncidentService {
     private final IntegrationEventPublisher events;
     private final long editWindowMinutes;
     private final long maxEvidenceSizeBytes;
+    private final EvidenceStorage evidenceStorage;
 
     public IncidentService(IncidentRepository incidentRepository,
                             IncidentAuditLogRepository auditLogRepository,
                             IntegrationEventPublisher events,
                             @Value("${incident.edit-window-minutes}") long editWindowMinutes,
-                            @Value("${incident.max-evidence-size-bytes}") long maxEvidenceSizeBytes) {
+                            @Value("${incident.max-evidence-size-bytes}") long maxEvidenceSizeBytes,
+                            EvidenceStorage evidenceStorage) {
         this.incidentRepository = incidentRepository;
         this.auditLogRepository = auditLogRepository;
         this.events = events;
         this.editWindowMinutes = editWindowMinutes;
         this.maxEvidenceSizeBytes = maxEvidenceSizeBytes;
+        this.evidenceStorage = evidenceStorage;
     }
 
     @Transactional
@@ -64,6 +68,9 @@ public class IncidentService {
             for (EvidenceRequest evidenceRequest : request.evidences()) {
                 if (evidenceRequest.sizeBytes() > maxEvidenceSizeBytes) {
                     throw new EvidenceTooLargeException(maxEvidenceSizeBytes);
+                }
+                if (evidenceStorage.enabled() && !evidenceStorage.isSanitizedUrl(evidenceRequest.url())) {
+                    throw new IllegalArgumentException("Evidence must be uploaded through the sanitizing pipeline");
                 }
                 incident.getEvidences().add(new Evidence(incident, evidenceRequest.mediaType(),
                         evidenceRequest.url(), evidenceRequest.sizeBytes()));

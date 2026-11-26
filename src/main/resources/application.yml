@@ -45,6 +45,10 @@ incident:
     poll-interval-ms: ${OUTBOX_POLL_MS:1000}
   edit-window-minutes: ${EDIT_WINDOW_MINUTES:30}
   max-evidence-size-bytes: ${MAX_EVIDENCE_SIZE_BYTES:26214400}
+  evidence:
+    storage:
+      account: ${EVIDENCE_STORAGE_ACCOUNT:}
+      key: ${EVIDENCE_STORAGE_KEY:}
 
 management:
   metrics:
