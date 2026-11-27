@@ -44,16 +44,28 @@ public class IncidentQueryService {
 
     public List<HeatCellResponse> heatmap(IncidentFilter.Bounds bounds, double cellSize) {
         double cell = Math.max(cellSize, MIN_CELL_DEGREES);
-        var counts = new java.util.HashMap<java.util.List<Long>, Long>();
-        for (Object[] row : incidents.coordinatesInBounds(bounds.minLat(), bounds.maxLat(), bounds.minLng(), bounds.maxLng(),
-                PageRequest.of(0, MAX_HEAT_ROWS))) {
-            long latCell = (long) Math.floor(((Number) row[0]).doubleValue() / cell);
-            long lngCell = (long) Math.floor(((Number) row[1]).doubleValue() / cell);
-            counts.merge(java.util.List.of(latCell, lngCell), 1L, Long::sum);
+        return aggregate(incidents.coordinatesInBounds(bounds.minLat(), bounds.maxLat(), bounds.minLng(), bounds.maxLng(),
+                PageRequest.of(0, MAX_HEAT_ROWS)), cell);
+    }
+
+    /**
+     * Agrupa coordenadas en una cuadricula. Cada celda se ubica en el centroide de sus reportes reales, no en el
+     * centro geometrico de la celda: asi el mapa de calor no dibuja una rejilla regular y las zonas se ven donde ocurren.
+     */
+    static List<HeatCellResponse> aggregate(List<Object[]> rows, double cell) {
+        record Acc(double[] sum, long[] count) { }
+        var cells = new java.util.HashMap<java.util.List<Long>, Acc>();
+        for (Object[] row : rows) {
+            double lat = ((Number) row[0]).doubleValue();
+            double lng = ((Number) row[1]).doubleValue();
+            var key = java.util.List.of((long) Math.floor(lat / cell), (long) Math.floor(lng / cell));
+            var acc = cells.computeIfAbsent(key, k -> new Acc(new double[2], new long[1]));
+            acc.sum()[0] += lat;
+            acc.sum()[1] += lng;
+            acc.count()[0]++;
         }
-        return counts.entrySet().stream()
-                .map(e -> new HeatCellResponse((e.getKey().get(0) + 0.5) * cell, (e.getKey().get(1) + 0.5) * cell,
-                        e.getValue(), riskOf(e.getValue())))
+        return cells.values().stream()
+                .map(a -> new HeatCellResponse(a.sum()[0] / a.count()[0], a.sum()[1] / a.count()[0], a.count()[0], riskOf(a.count()[0])))
                 .toList();
     }
 
