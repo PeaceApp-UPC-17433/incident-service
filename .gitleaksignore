@@ -1,3 +1,5 @@
 # Hallazgos historicos revisados (fingerprint). Ver el motivo en cada linea.
 # src/test/java/pe/upc/peaceapp/incident/evidence/EvidenceApiTest.java -> clave falsa de pruebas
 ce5df05bb6ce41d6156f822b60954a34621b4218:src/test/java/pe/upc/peaceapp/incident/evidence/EvidenceApiTest.java:generic-api-key:21
+# src/test/java/pe/upc/peaceapp/incident/evidence/EvidenceStorageAzuriteTest.java -> cuenta y clave PUBLICAS de desarrollo de Azurite (emulador de Azure Storage, documentadas por Microsoft). No son un secreto.
+4247a994eb435c3a102b2f875f5a561d28cf69c6:src/test/java/pe/upc/peaceapp/incident/evidence/EvidenceStorageAzuriteTest.java:generic-api-key:35

@@ -53,20 +53,29 @@ public class IncidentQueryService {
      * centro geometrico de la celda: asi el mapa de calor no dibuja una rejilla regular y las zonas se ven donde ocurren.
      */
     static List<HeatCellResponse> aggregate(List<Object[]> rows, double cell) {
-        record Acc(double[] sum, long[] count) { }
-        var cells = new java.util.HashMap<java.util.List<Long>, Acc>();
+        var cells = new java.util.HashMap<java.util.List<Long>, CellAccumulator>();
         for (Object[] row : rows) {
             double lat = ((Number) row[0]).doubleValue();
             double lng = ((Number) row[1]).doubleValue();
             var key = java.util.List.of((long) Math.floor(lat / cell), (long) Math.floor(lng / cell));
-            var acc = cells.computeIfAbsent(key, k -> new Acc(new double[2], new long[1]));
-            acc.sum()[0] += lat;
-            acc.sum()[1] += lng;
-            acc.count()[0]++;
+            cells.computeIfAbsent(key, k -> new CellAccumulator()).add(lat, lng);
         }
         return cells.values().stream()
-                .map(a -> new HeatCellResponse(a.sum()[0] / a.count()[0], a.sum()[1] / a.count()[0], a.count()[0], riskOf(a.count()[0])))
+                .map(a -> new HeatCellResponse(a.latSum / a.count, a.lngSum / a.count, a.count, riskOf(a.count)))
                 .toList();
+    }
+
+    /** Suma coordenadas de una celda para calcular su centroide. Clase y no record: un record con arreglos compara por referencia. */
+    private static final class CellAccumulator {
+        private double latSum;
+        private double lngSum;
+        private long count;
+
+        void add(double lat, double lng) {
+            latSum += lat;
+            lngSum += lng;
+            count++;
+        }
     }
 
     public Stats stats() {
